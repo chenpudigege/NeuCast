@@ -91,40 +91,40 @@ if __name__ == '__main__':
     # In[8]:
 
 
-    def get_model(n_days, n_hours, d_factors=2, k_factors=4, c=0):
+    def get_model(n_days,n_hours,d_factors=4,k_factors=16,n_layers=1, c=0, ext=1):
         Dinp = Input((1,))
-        D = Embedding(n_days, d_factors, input_length=1, name='DayEmbedding', embeddings_regularizer=l2(c))(Dinp)
+        D = Embedding(n_days, d_factors, input_length=1,name='DayEmbedding',embeddings_regularizer=l2(c))(Dinp)
         D = Flatten()(D)
 
         Hinp = Input((1,))
-        H = Embedding(n_hours, d_factors, input_length=1, name='HourEmbedding', embeddings_regularizer=l2(c))(Hinp)
+        H = Embedding(n_hours, d_factors, input_length=1,name='HourEmbedding',embeddings_regularizer=l2(c))(Hinp)
         H = Flatten()(H)
 
         Tinp = Input((1,))
-        #     Rinp = Input((1,))
 
+        latent_layer = Concatenate()([D,H])
+        for i in range(n_layers):
+            latent_layer = Dense(k_factors)(latent_layer)
+            latent_layer = LeakyReLU(alpha=0.1)(latent_layer)
 
-        latent_layer = Concatenate()([D, H])
-        latent_layer = Dense(k_factors * 2)(latent_layer)
-        latent_layer = LeakyReLU(alpha=0.1)(latent_layer)
-        latent_layer = Dense(k_factors)(latent_layer)
-        latent_layer = LeakyReLU(alpha=0.1)(latent_layer)
-
-        external_layer = Tinp
-        external_layer = Dense(k_factors * 2)(external_layer)
-        external_layer = LeakyReLU(alpha=0.1)(external_layer)
-        external_layer = Dense(k_factors)(external_layer)
-        external_layer = LeakyReLU(alpha=0.1)(external_layer)
-
-        out_layer = Concatenate()([latent_layer, external_layer])
-        out_layer = Dense(k_factors * 2)(out_layer)
+        if ext!=0:
+            external_layer = Tinp
+            for i in range(n_layers - 1):
+                external_layer = Dense(k_factors)(external_layer)
+                external_layer = LeakyReLU(alpha=0.1)(external_layer)
+            external_layer = Dense(1)(external_layer)
+            external_layer = LeakyReLU(alpha=0.1)(external_layer)
+            out_layer = Concatenate()([latent_layer,external_layer])
+        else:
+            out_layer = latent_layer
+            
+        for i in range(n_layers):
+            out_layer = Dense(k_factors)(out_layer)
+            out_layer = LeakyReLU(alpha=0.1)(out_layer)
+        out_layer = Dense(2,name='out')(out_layer)
         out_layer = LeakyReLU(alpha=0.1)(out_layer)
-        out_layer = Dense(k_factors)(out_layer)
-        out_layer = LeakyReLU(alpha=0.1)(out_layer)
-        out_layer = Dense(2, name='out')(out_layer)
-        out_layer = LeakyReLU(alpha=0.1)(out_layer)
-
-        model = Model([Dinp, Hinp, Tinp], [out_layer])
+        
+        model = Model([Dinp,Hinp,Tinp],[out_layer])
         return model
 
     class TrainStop(Callback):
@@ -155,14 +155,9 @@ if __name__ == '__main__':
     def rmse(y_true, y_pred):
         return mse(y_true, y_pred) ** 0.5
 
-
-    # In[ ]:
-
-    
     train = train_data
     dif = 0
 
-    
     for epoch in range(max_iter_K):
 	# fit factor modeling
         day = train[['date_ind']].as_matrix()
@@ -298,4 +293,3 @@ if __name__ == '__main__':
     test_data['q_pred'] = test_data['q_pred'] * test_data['scale_q'] + test_data.I_imag_min
     test_data = test_data.sort_values(['date_ind','hour'])
     test_data[['I_imag','I_real','p_pred','q_pred']].to_csv('result/neucast_'+str(end)+'_'+str(day_pred)+'_'+args.method+'_'+str(times)+'.csv',index = False)
-    

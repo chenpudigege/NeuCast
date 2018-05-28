@@ -9,9 +9,10 @@
   - end: control the end day of the dataset.
 
 - For SC data:  
-  >python NeuCast_SC.py --method sar --day_pred 5 --end 23
-  - method: the smoothing method use in the algorithm, including 'sar','ar','hw'
+  > python NeuCast_SC.py --loc_id 0 --method hw
   - loc_id: the location id, from 0~132
+  - method: the smoothing method use in the algorithm, including 'sar','ar','hw'
+  
 
 # Require
 - Keras (2.0.9) with tensorflow backend

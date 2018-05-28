@@ -32,7 +32,7 @@ ro.r('library(forecast)')
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Run TC-MLP-AP.")
+    parser = argparse.ArgumentParser(description="Run NeuCast.")
     parser.add_argument('--loc_id', type=int, default=0,
                         help='location_id.')
     parser.add_argument('--method', type=str, default='hw')
@@ -69,7 +69,7 @@ if __name__ == '__main__':
     alpha = 0.2
     np.random.seed(1337)
 
-    def get_model(n_days,n_hours,d_factors=4,k_factors=16,c=0):
+    def get_model(n_days,n_hours,d_factors=4,k_factors=16,n_layers=1, c=0, ext=1):
         Dinp = Input((1,))
         D = Embedding(n_days, d_factors, input_length=1,name='DayEmbedding',embeddings_regularizer=l2(c))(Dinp)
         D = Flatten()(D)
@@ -83,22 +83,24 @@ if __name__ == '__main__':
 
 
         latent_layer = Concatenate()([D,H])
-        latent_layer = Dense(k_factors*2)(latent_layer)
-        latent_layer = LeakyReLU(alpha=0.1)(latent_layer)
-        latent_layer = Dense(k_factors)(latent_layer)
-        latent_layer = LeakyReLU(alpha=0.1)(latent_layer)
-        
-        external_layer = Concatenate()([Tinp,Rinp])
-        external_layer = Dense(k_factors*2)(external_layer)
-        external_layer = LeakyReLU(alpha=0.1)(external_layer)
-        external_layer = Dense(k_factors)(external_layer)
-        external_layer = LeakyReLU(alpha=0.1)(external_layer)
-        
-        out_layer = Concatenate()([latent_layer,external_layer])
-        out_layer = Dense(k_factors*2)(out_layer)
-        out_layer = LeakyReLU(alpha=0.1)(out_layer)
-        out_layer = Dense(k_factors)(out_layer)
-        out_layer = LeakyReLU(alpha=0.1)(out_layer)
+        for i in range(n_layers):
+            latent_layer = Dense(k_factors)(latent_layer)
+            latent_layer = LeakyReLU(alpha=0.1)(latent_layer)
+
+        if ext!=0:
+            external_layer = Concatenate()([Tinp,Rinp])
+            for i in range(n_layers - 1):
+                external_layer = Dense(k_factors)(external_layer)
+                external_layer = LeakyReLU(alpha=0.1)(external_layer)
+            external_layer = Dense(2)(external_layer)
+            external_layer = LeakyReLU(alpha=0.1)(external_layer)
+            out_layer = Concatenate()([latent_layer,external_layer])
+        else:
+            out_layer = latent_layer
+            
+        for i in range(n_layers):
+            out_layer = Dense(k_factors)(out_layer)
+            out_layer = LeakyReLU(alpha=0.1)(out_layer)
         out_layer = Dense(2,name='out')(out_layer)
         out_layer = LeakyReLU(alpha=0.1)(out_layer)
         
@@ -308,7 +310,7 @@ if __name__ == '__main__':
     test_data['q_pred'] = test_data['q_pred'] * test_data['scale_q'] + test_data['loc_q_min']
     test_data['p_pred_ap'] = test_data['p_pred_ap'] * test_data['scale_p'] + test_data['loc_p_min']
     test_data['q_pred_ap'] = test_data['q_pred_ap'] * test_data['scale_q'] + test_data['loc_q_min']
-    test_data[['date_ind','hour','p_pred','q_pred','p_pred_ap','q_pred_ap']].to_csv('result/SC_neucast_%s_loc_%d.csv'%(method,loc_id),index = False)
+    test_data[['date_ind','hour','p_pred','q_pred','p_pred_ap','q_pred_ap']].to_csv('result/SC_neucast_%s_loc%d.csv'%(method,loc_id),index = False)
 
 
 
