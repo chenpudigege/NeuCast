@@ -21,9 +21,9 @@
 
 # Reference
 If you use the data and the NeuCast algorithom, please cite our work.
->@inproceedings{Neu2018,
->  title={NeuCast: Seasonal Neural Forecast of Power Grid Time Series},
->  author={Chen, Pudi and Liu, Shenghua and Shi, Chuan and Bryan Hooi and Wang, bai and Cheng, Xueqi},
->  booktitle={International Joint Conference on Artificial Intelligence},
->  year={2018},
+>@inproceedings{Neu2018,  
+>  title={NeuCast: Seasonal Neural Forecast of Power Grid Time Series},  
+>  author={Chen, Pudi and Liu, Shenghua and Shi, Chuan and Bryan Hooi and Wang, bai and Cheng, Xueqi},  
+>  booktitle={International Joint Conference on Artificial Intelligence},  
+>  year={2018},  
 >}
